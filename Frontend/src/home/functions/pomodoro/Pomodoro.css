@@ -1,0 +1,176 @@
+* Main container */ .pomodoro-container {
+    min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.dashboard-container {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Settings overlay and modal */
+.settings-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(3px);
+}
+
+.settings-modal {
+    width: 90%;
+    max-width: 500px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Cards */
+.card {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.card-header {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+/* Pomodoro mode specific styles */
+.pomodoro-card {
+    margin-bottom: 1.5rem;
+}
+
+.timer-display {
+    text-align: center;
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+}
+
+.mode-btn {
+    transition: all 0.3s ease;
+}
+
+.timer-button {
+    min-width: 200px;
+    border: none;
+}
+
+.header-section {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tip-card {
+    border-left-width: 4px !important;
+}
+
+.mode-selector {
+    margin-bottom: 1.5rem;
+}
+
+.timer-progress {
+    width: 100px;
+    height: 10px;
+}
+
+.current-task-alert {
+    max-width: 600px;
+    margin: 0 auto;
+    margin-bottom: 1.5rem;
+}
+
+.timer-digits {
+    font-size: 4rem;
+    font-weight: 700;
+}
+
+.settings-input {
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+/* Dark mode toggle */
+.inverted-close {
+    filter: invert(1);
+}
+
+/* Task selector styles */
+.task-selector {
+    margin-bottom: 1rem;
+}
+
+.task-badge {
+    margin-right: 0.5rem;
+}
+
+.clear-task-btn {
+    padding: 0.15rem 0.4rem;
+    font-size: 0.75rem;
+}
+
+/* Sidebar consistency */
+.sidebar-wrapper {
+    width: 250px;
+    /* Fixed width to match across all pages */
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+    .btn-group {
+        flex-wrap: wrap;
+    }
+
+    .btn-group .btn {
+        flex: 1 0 auto;
+        margin-bottom: 5px;
+    }
+
+    .timer-digits {
+        font-size: 3rem;
+    }
+}
+
+/* Action buttons (Reset & Settings) */
+.btn-action {
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.btn-action:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.btn-action:active {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  transform: translateY(1px);
+}
+
+/* Badge styling */
+.badge.rounded-pill {
+  font-weight: 500;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Make completed sessions badge more appealing */
+span.badge.rounded-pill {
+  background-color: var(--mode-color-primary, #FF7E6B);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+span.badge.rounded-pill::before {
+  font-size: 0.9rem;
+}

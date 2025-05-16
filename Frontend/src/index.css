@@ -1,0 +1,41 @@
+
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+/* Apply to all container backgrounds */
+body.dark-mode .bg-light {
+    background-color: #1e1e1e !important;
+}
+
+body.dark-mode .form-control {
+    background-color: #1e1e1e;
+    color: #ffffff;
+    border-color: #444;
+}
+
+body.dark-mode .form-control::placeholder {
+    color: #aaaaaa;
+}
+
+body.dark-mode .btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+body.dark-mode .alert-info,
+body.dark-mode .alert-danger {
+    background-color: #222;
+    color: #fff;
+    border-color: #555;
+}
+
+body.dark-mode a,
+body.dark-mode .text-primary {
+    color: #66ccff !important;
+}
+
+body.dark-mode .form-check-label {
+    color: #ccc;
+}

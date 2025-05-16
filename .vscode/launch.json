@@ -1,0 +1,15 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-TaskManagerApplication<task_manager>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.task.task_manager.TaskManagerApplication",
+            "projectName": "task_manager",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env",
+            "timeout": 60000
+        }
+    ]
+}
