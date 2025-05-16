@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.task_manager.Controller.HomeController;
 import com.task.task_manager.DTO.LoginDTO;
 import com.task.task_manager.DTO.UserRegisterDTO;
+import com.task.task_manager.Model.ActivityLog;
 import com.task.task_manager.Model.MailBody;
 import com.task.task_manager.Model.User;
 import com.task.task_manager.Repo.ActivityLogRepo;
 import com.task.task_manager.Repo.UserRepo;
 import com.task.task_manager.Service.EmailService;
 import com.task.task_manager.Service.JwtService;
+import com.task.task_manager.Service.RedisService;
 import com.task.task_manager.Service.UserService;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -25,6 +27,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.Mockito.*;
@@ -53,6 +57,9 @@ public class HomeControllerTest {
     @Mock
     private ActivityLogRepo activityLogRepo;
 
+    @Mock
+    private RedisService redisService;
+
     @InjectMocks
     private HomeController homeController;
 
@@ -70,19 +77,32 @@ public class HomeControllerTest {
     void testRegisterSuccess() throws Exception {
         UserRegisterDTO dto = new UserRegisterDTO("testuser", "testuser@gmail.com", "testpass123");
 
+        // Mock dependencies for checking existing user/email
         when(userRepo.findByUsername(dto.username())).thenReturn(Optional.empty());
         when(userRepo.findByEmail(dto.email())).thenReturn(Optional.empty());
-        doNothing().when(userService).saveUser(any(User.class));
+        
+        // Mock Redis service - OTP should not exist yet
+        when(redisService.getOtp(dto.email())).thenReturn(null);
+        
+        // Mock the save operation
+        doNothing().when(redisService).saveUserOtp(eq(dto.email()), anyString(), anyString(), anyInt());
         doNothing().when(emailService).sendHtmlMessage(any(MailBody.class));
 
         mockMvc.perform(post("/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(content().string("Added Successfully"));
+                .andExpect(content().string("OTP sent to your email. Please verify."));
 
-        verify(userService).saveUser(any(User.class));
+        // Verify Redis operations
+        verify(redisService).getOtp(dto.email());
+        verify(redisService).saveUserOtp(eq(dto.email()), anyString(), anyString(), eq(2));
+        
+        // Verify email was sent
         verify(emailService).sendHtmlMessage(any(MailBody.class));
+        
+        // Verify user was NOT saved yet (happens after OTP verification)
+        verify(userService, never()).saveUser(any(User.class));
     }
 
     @Test
@@ -134,5 +154,95 @@ public class HomeControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Invaild username password"));
+    }
+
+    @Test
+    void testVerifyOtpSuccess() throws Exception {
+        // Setup test data
+        String email = "test@gmail.com";
+        String otp = "123456";
+        String userJson = "{\"username\":\"testuser\",\"email\":\"test@gmail.com\",\"password\":\"testpass123\"}";
+
+        // Mock Redis operations
+        when(redisService.getOtp(email)).thenReturn(otp);
+        when(redisService.getTempUser(email)).thenReturn(userJson);
+        when(userRepo.findByUsername("testuser")).thenReturn(Optional.empty());
+        when(userRepo.findByEmail(email)).thenReturn(Optional.empty());
+        doNothing().when(redisService).deleteOtp(email);
+        doNothing().when(redisService).deleteTempUser(email);
+        doNothing().when(emailService).sendHtmlMessage(any(MailBody.class));
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("email", email);
+        payload.put("otp", otp);
+
+        mockMvc.perform(post("/verify-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Email verified and user registered successfully."));
+
+        verify(userService).saveUser(any(User.class));
+        verify(emailService).sendHtmlMessage(any(MailBody.class));
+        verify(redisService).deleteOtp(email);
+        verify(redisService).deleteTempUser(email);
+        verify(activityLogRepo).save(any(ActivityLog.class));
+    }
+
+    @Test
+    void testVerifyOtpInvalidOTP() throws Exception {
+        String email = "test@gmail.com";
+        String otp = "123456";
+        
+        // Mock Redis to return different OTP
+        when(redisService.getOtp(email)).thenReturn("654321");
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("email", email);
+        payload.put("otp", otp);
+
+        mockMvc.perform(post("/verify-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().string("Invalid OTP."));
+
+        verify(userService, never()).saveUser(any(User.class));
+    }
+
+    @Test
+    void testVerifyOtpExpiredOTP() throws Exception {
+        String email = "test@gmail.com";
+        String otp = "123456";
+        
+        // Mock Redis to return null (expired OTP)
+        when(redisService.getOtp(email)).thenReturn(null);
+
+        Map<String, String> payload = new HashMap<>();
+        payload.put("email", email);
+        payload.put("otp", otp);
+
+        mockMvc.perform(post("/verify-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isGone())
+                .andExpect(content().string("OTP expired or not requested."));
+
+        verify(userService, never()).saveUser(any(User.class));
+    }
+
+    @Test
+    void testVerifyOtpWithMissingData() throws Exception {
+        Map<String, String> payload = new HashMap<>();
+        payload.put("email", "test@gmail.com");
+        // Missing OTP
+
+        mockMvc.perform(post("/verify-otp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(payload)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Email and OTP are required."));
+
+        verify(userService, never()).saveUser(any(User.class));
     }
 }

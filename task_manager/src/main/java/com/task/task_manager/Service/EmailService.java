@@ -26,10 +26,10 @@ public class EmailService {
         MimeMessageHelper helper = new MimeMessageHelper(message, true);  // true for multipart
         helper.setTo(mailBody.to());
         helper.setFrom("tickit232@gmail.com");
-        helper.setSubject(mailBody.subject());
+        helper.setSubject(mailBody.getSubject());
 
         // Use the pre-formatted HTML content
-        helper.setText(mailBody.text(), true);  // true indicates that it's HTML content
+        helper.setText(mailBody.getText(), true);  // true indicates that it's HTML content
 
         // Send the email
         System.out.println("Sending email to: " + mailBody.to());
